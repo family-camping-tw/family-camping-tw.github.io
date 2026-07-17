@@ -1,0 +1,4 @@
+data/evidence.js
+data/evidence.json
+dist/
+*.tar.gz

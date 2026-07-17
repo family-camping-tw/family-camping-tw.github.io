@@ -1,5 +1,6 @@
 const config = window.CAMP_SITE_CONFIG || {};
 const state = { camps: [], filtered: [], compare: new Set() };
+const mobileViewport = window.matchMedia("(max-width: 760px)");
 
 const elements = {
   list: document.querySelector("#camp-list"), count: document.querySelector("#result-count"), empty: document.querySelector("#empty-state"),
@@ -25,6 +26,14 @@ const dataStatusClass = value => ({
 }[value] || "");
 const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[char]));
 const formatAltitude = value => value == null ? "不確定" : `${value} m`;
+const matchesAltitudeBand = (altitude, band) => {
+  if (!band) return true;
+  if (!Number.isFinite(altitude)) return false;
+  if (band === "1000-plus") return altitude >= 1000;
+  if (band === "750-999") return altitude >= 750 && altitude <= 999;
+  if (band === "500-749") return altitude >= 500 && altitude <= 749;
+  return altitude <= 499;
+};
 const sortWithTrailing = (values, trailing) => {
   const trailingSet = new Set(trailing);
   const regular = values.filter(value => !trailingSet.has(value)).sort((a, b) => a.localeCompare(b, "zh-Hant"));
@@ -60,6 +69,7 @@ function renderMapActions(camp) {
 function cardTemplate(camp) {
   const selected = state.compare.has(camp.營地);
   const bath = camp.衛浴設備評價 === "不確定" ? "衛浴評價不確定" : camp.衛浴設備評價;
+  const compareButton = mobileViewport.matches ? "" : `<button class="compare-button" type="button" data-compare="${escapeHtml(camp.營地)}" aria-pressed="${selected}" aria-label="${selected ? "移出" : "加入"}比較" title="${selected ? "移出" : "加入"}比較">${selected ? "✓" : "+"}</button>`;
   return `<article class="camp-card">
     <div class="card-head"><div><h2>${escapeHtml(camp.營地)}</h2><p class="location">${escapeHtml(camp.縣市)} ${escapeHtml(camp.鄉鎮)} · ${escapeHtml(camp.訂位平台)}／${escapeHtml(camp.訂位方式)}</p></div><span class="rating">${camp.Google星等 ? `★ ${camp.Google星等.toFixed(1)}` : "未評分"}</span></div>
     <dl class="quick-facts"><div><dt>車程</dt><dd>${escapeHtml(camp.車程)}</dd></div><div><dt>海拔</dt><dd>${formatAltitude(camp.海拔高度)}</dd></div><div><dt>場地</dt><dd>${escapeHtml(camp.營地材質)}</dd></div></dl>
@@ -69,7 +79,7 @@ function cardTemplate(camp) {
     <div class="data-status-note">
       <span class="data-status ${dataStatusClass(camp.資料狀態)}">資料狀態：${escapeHtml(camp.資料狀態)}</span>
     </div>
-    <div class="card-actions"><a class="secondary-button google-ai-link" href="${escapeHtml(getGoogleAiUrl(camp))}" target="_blank" rel="noopener" title="以營地名稱與所在地開啟 Google AI 模式搜尋">Google AI資訊</a>${renderMapActions(camp)}<button class="compare-button" type="button" data-compare="${escapeHtml(camp.營地)}" aria-pressed="${selected}" aria-label="${selected ? "移出" : "加入"}比較" title="${selected ? "移出" : "加入"}比較">${selected ? "✓" : "+"}</button></div>
+    <div class="card-actions"><a class="secondary-button google-ai-link" href="${escapeHtml(getGoogleAiUrl(camp))}" target="_blank" rel="noopener" title="以營地名稱與所在地開啟 Google AI 模式搜尋">Google AI資訊</a>${renderMapActions(camp)}${compareButton}</div>
   </article>`;
 }
 
@@ -81,7 +91,7 @@ function getMatchingCamps() {
       && (!elements.county.value || camp.縣市 === elements.county.value)
       && (!elements.booking.value || camp.訂位平台 === elements.booking.value)
       && (!elements.drive.value || (Number.isFinite(camp.車程分鐘) && camp.車程分鐘 <= Number(elements.drive.value)))
-      && (!elements.altitude.value || camp.海拔高度 <= Number(elements.altitude.value))
+      && matchesAltitudeBand(camp.海拔高度, elements.altitude.value)
       && (!elements.surface.value || camp.營地材質 === elements.surface.value)
       && (!elements.rain.checked || camp.雨棚區 === "有")
       && (!elements.kids.checked || hasKids(camp))
@@ -114,8 +124,10 @@ function sortCamps(reshuffle = false) {
   state.filtered.sort((a, b) => {
     const driveA = Number.isFinite(a.車程分鐘) ? a.車程分鐘 : Number.MAX_SAFE_INTEGER;
     const driveB = Number.isFinite(b.車程分鐘) ? b.車程分鐘 : Number.MAX_SAFE_INTEGER;
+    const altitudeA = Number.isFinite(a.海拔高度) ? a.海拔高度 : -1;
+    const altitudeB = Number.isFinite(b.海拔高度) ? b.海拔高度 : -1;
     if (sort === "rating") return (b.Google星等 || 0) - (a.Google星等 || 0) || driveA - driveB;
-    if (sort === "altitude") return (a.海拔高度 ?? Number.MAX_SAFE_INTEGER) - (b.海拔高度 ?? Number.MAX_SAFE_INTEGER) || driveA - driveB;
+    if (sort === "altitude") return altitudeB - altitudeA || driveA - driveB;
     return driveA - driveB || (b.Google星等 || 0) - (a.Google星等 || 0);
   });
 }
@@ -125,7 +137,7 @@ function renderActiveFilters() {
   if (elements.search.value) chips.push(`搜尋：${elements.search.value}`);
   [[elements.county,"縣市"],[elements.booking,"訂位平台"],[elements.surface,"場地"]].forEach(([el,label]) => { if (el.value) chips.push(`${label}：${el.value}`); });
   if (elements.drive.value) chips.push(`車程 ≤ ${elements.drive.options[elements.drive.selectedIndex].text}`);
-  if (elements.altitude.value) chips.push(`海拔 ≤ ${elements.altitude.value}m`);
+  if (elements.altitude.value) chips.push(`海拔：${elements.altitude.options[elements.altitude.selectedIndex].text}`);
   if (elements.rain.checked) chips.push("有雨棚");
   if (elements.kids.checked) chips.push("親子設施");
   if (elements.lodging.checked) chips.push("免搭帳");
@@ -177,7 +189,7 @@ function toggleCompare(name) {
 
 function updateCompareDock() {
   const names = [...state.compare];
-  elements.compareDock.hidden = names.length === 0;
+  elements.compareDock.hidden = mobileViewport.matches || names.length === 0;
   elements.compareSummary.textContent = names.join("、");
 }
 
@@ -199,7 +211,7 @@ function resetFilters() {
   document.querySelectorAll("#filters input[type=checkbox]").forEach(input => { input.checked = false; });
   elements.search.value = "";
   elements.sort.value = "random";
-  if (window.matchMedia("(max-width: 760px)").matches && elements.filters.classList.contains("open")) previewMobileResultCount();
+  if (mobileViewport.matches && elements.filters.classList.contains("open")) previewMobileResultCount();
   else applyFilters({ reshuffle: true });
 }
 
@@ -219,7 +231,7 @@ async function init() {
   [elements.county, elements.booking, elements.drive, elements.altitude, elements.surface, elements.rain, elements.kids, elements.lodging, elements.car, elements.carSide, elements.rvLodging]
     .filter(Boolean)
     .forEach(element => element.addEventListener("change", () => {
-      if (window.matchMedia("(max-width: 760px)").matches && elements.filters.classList.contains("open")) previewMobileResultCount();
+      if (mobileViewport.matches && elements.filters.classList.contains("open")) previewMobileResultCount();
       else applyFilters({ reshuffle: true });
     }));
   elements.sort.addEventListener("change", () => applyFilters({ reshuffle: elements.sort.value === "random" }));
@@ -231,8 +243,12 @@ async function init() {
   document.addEventListener("keydown", event => { if (event.key === "Escape") setMobileFiltersOpen(false); });
   document.querySelector("#open-compare").addEventListener("click", () => { renderComparison(); elements.compareDialog.showModal(); });
   document.querySelector("#close-compare").addEventListener("click", () => elements.compareDialog.close());
+  mobileViewport.addEventListener("change", () => {
+    if (mobileViewport.matches && elements.compareDialog.open) elements.compareDialog.close();
+    render();
+  });
   applyFilters({ reshuffle: true });
-  if (window.matchMedia("(max-width: 760px)").matches) {
+  if (mobileViewport.matches) {
     setMobileFiltersOpen(true);
     previewMobileResultCount();
   }

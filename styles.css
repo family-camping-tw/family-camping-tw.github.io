@@ -126,9 +126,9 @@ dialog::backdrop { background: rgba(18, 33, 26, 0.62); }
   .results-toolbar { align-items: flex-start; }
   .sort-field { display: grid; gap: 3px; }
   .sort-field select { max-width: 180px; }
-  .card-actions { grid-template-columns: 1fr 1fr; }
-  .compare-button { width: 100%; }
-  .compare-dock { right: 14px; left: 14px; justify-content: space-between; }
+  .card-actions { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
+  .card-actions a { min-width: 0; padding-inline: 6px; font-size: 12px; }
+  .compare-button, .compare-dock, #compare-dialog { display: none; }
 }
 
 @media (max-width: 420px) {
@@ -140,6 +140,6 @@ dialog::backdrop { background: rgba(18, 33, 26, 0.62); }
   .camp-card { padding: 16px; }
   .quick-facts { grid-template-columns: 1fr 1fr; }
   .quick-facts div:last-child { grid-column: 1 / -1; }
-  .card-actions { grid-template-columns: 1fr 1fr; }
-  .google-ai-link, .compare-button { width: 100%; }
+  .card-actions { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
+  .google-ai-link { width: 100%; }
 }

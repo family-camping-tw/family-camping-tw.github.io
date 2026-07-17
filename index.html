@@ -9,7 +9,7 @@
     <meta property="og:image" content="assets/camping-family-header.png">
     <meta name="twitter:card" content="summary_large_image">
     <title>親子露營搜尋</title>
-    <link rel="stylesheet" href="styles.css?v=20260717-mobile-first">
+    <link rel="stylesheet" href="styles.css?v=20260717-mobile-altitude">
   </head>
   <body>
     <header class="topbar">
@@ -50,7 +50,7 @@
           <label class="field">縣市<select id="filter-county"><option value="">全部縣市</option></select></label>
           <label class="field">訂位平台<select id="filter-booking"><option value="">全部平台</option></select></label>
           <label class="field">最長車程<select id="filter-drive"><option value="">不限</option><option value="60">1 小時內</option><option value="90">1.5 小時內</option><option value="120">2 小時內</option><option value="180">3 小時內</option></select></label>
-          <label class="field">最高海拔<select id="filter-altitude"><option value="">不限</option><option value="500">500 公尺以下</option><option value="800">800 公尺以下</option><option value="1000">1000 公尺以下</option><option value="1500">1500 公尺以下</option></select></label>
+          <label class="field">最高海拔<select id="filter-altitude"><option value="">不限</option><option value="1000-plus">1000m 以上</option><option value="750-999">750～999m</option><option value="500-749">500～749m</option><option value="0-499">499m 以下</option></select></label>
           <label class="field">營地材質<select id="filter-surface"><option value="">不限</option><option>草地</option><option>碎石</option><option>草石混合</option><option>木棧板</option><option>水泥或硬地</option><option>多種材質</option><option>不確定</option></select></label>
 
           <fieldset>
@@ -71,7 +71,7 @@
         <section class="results" aria-live="polite">
           <div class="results-toolbar">
             <p id="result-count"></p>
-            <label class="sort-field">排序<select id="sort-select"><option value="random">隨機推薦</option><option value="drive">車程由短到長</option><option value="rating">Google 星等由高到低</option><option value="altitude">海拔由低到高</option></select></label>
+            <label class="sort-field">排序<select id="sort-select"><option value="random">隨機推薦</option><option value="drive">車程由短到長</option><option value="rating">Google 星等由高到低</option><option value="altitude">海拔由高到低</option></select></label>
           </div>
           <div class="active-filters" id="active-filters"></div>
           <div class="camp-list" id="camp-list"></div>
@@ -98,6 +98,6 @@
 
     <script src="config.js?v=20260716-google-ai"></script>
     <script src="data/camps.js?v=20260716-local-fallback"></script>
-    <script src="app.js?v=20260717-mobile-first-2"></script>
+    <script src="app.js?v=20260717-mobile-altitude"></script>
   </body>
 </html>
