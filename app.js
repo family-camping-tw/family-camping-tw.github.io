@@ -1,5 +1,5 @@
 const config = window.CAMP_SITE_CONFIG || {};
-const state = { camps: [], filtered: [], compare: new Set(), evidence: new Map() };
+const state = { camps: [], filtered: [], compare: new Set() };
 
 const elements = {
   list: document.querySelector("#camp-list"), count: document.querySelector("#result-count"), empty: document.querySelector("#empty-state"),
@@ -49,17 +49,6 @@ function renderTags(camp) {
   return tags.slice(0, 4).map(([text, style]) => `<span class="tag ${style}">${escapeHtml(text)}</span>`).join("");
 }
 
-function renderSources(camp) {
-  const rows = state.evidence.get(camp.camp_id) || [];
-  const unique = [];
-  const seen = new Set();
-  rows.filter(row => row.判定狀態 === "採用").forEach(row => {
-    if (!seen.has(row.來源網址)) { seen.add(row.來源網址); unique.push(row); }
-  });
-  if (!unique.length) return "";
-  return `<div class="source-links"><span>資料來源</span>${unique.slice(0, 3).map(row => `<a href="${escapeHtml(row.來源網址)}" target="_blank" rel="noopener">${escapeHtml(row.來源類型)} · ${escapeHtml(row.查核日期)}</a>`).join("")}</div>`;
-}
-
 function renderMapActions(camp) {
   const verified = camp.Google地點狀態 === "已核對" && camp.Google導航連結;
   if (!verified) {
@@ -79,17 +68,14 @@ function cardTemplate(camp) {
     <p class="summary">${escapeHtml(bath)}</p>
     <div class="data-status-note">
       <span class="data-status ${dataStatusClass(camp.資料狀態)}">資料狀態：${escapeHtml(camp.資料狀態)}</span>
-      <span aria-hidden="true">·</span>
-      <span>查核 ${escapeHtml(camp.最後查核日期)}</span>
     </div>
-    ${renderSources(camp)}
     <div class="card-actions"><a class="secondary-button google-ai-link" href="${escapeHtml(getGoogleAiUrl(camp))}" target="_blank" rel="noopener" title="以營地名稱與所在地開啟 Google AI 模式搜尋">Google AI資訊</a>${renderMapActions(camp)}<button class="compare-button" type="button" data-compare="${escapeHtml(camp.營地)}" aria-pressed="${selected}" aria-label="${selected ? "移出" : "加入"}比較" title="${selected ? "移出" : "加入"}比較">${selected ? "✓" : "+"}</button></div>
   </article>`;
 }
 
-function applyFilters() {
+function getMatchingCamps() {
   const query = elements.search.value.trim().toLowerCase();
-  state.filtered = state.camps.filter(camp => {
+  return state.camps.filter(camp => {
     const searchable = `${camp.營地} ${camp.縣市} ${camp.鄉鎮}`.toLowerCase();
     return (!query || searchable.includes(query))
       && (!elements.county.value || camp.縣市 === elements.county.value)
@@ -104,12 +90,27 @@ function applyFilters() {
       && (!elements.carSide.checked || camp.車停帳邊 === "是")
       && (!elements.rvLodging.checked || camp.露營車住宿 === "是");
   });
-  sortCamps();
+}
+
+function shuffleCamps(camps) {
+  for (let index = camps.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [camps[index], camps[target]] = [camps[target], camps[index]];
+  }
+}
+
+function applyFilters({ reshuffle = true } = {}) {
+  state.filtered = getMatchingCamps();
+  sortCamps(reshuffle);
   render();
 }
 
-function sortCamps() {
+function sortCamps(reshuffle = false) {
   const sort = elements.sort.value;
+  if (sort === "random") {
+    if (reshuffle) shuffleCamps(state.filtered);
+    return;
+  }
   state.filtered.sort((a, b) => {
     const driveA = Number.isFinite(a.車程分鐘) ? a.車程分鐘 : Number.MAX_SAFE_INTEGER;
     const driveB = Number.isFinite(b.車程分鐘) ? b.車程分鐘 : Number.MAX_SAFE_INTEGER;
@@ -153,8 +154,13 @@ function setMobileFiltersOpen(open) {
 }
 
 function showFilteredResults() {
+  applyFilters({ reshuffle: true });
   setMobileFiltersOpen(false);
   document.querySelector(".results")?.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+function previewMobileResultCount() {
+  if (elements.applyMobileFilters) elements.applyMobileFilters.textContent = `顯示 ${getMatchingCamps().length} 個結果`;
 }
 
 function bindCardActions() {
@@ -191,34 +197,31 @@ function resetFilters() {
   document.querySelectorAll("#filters select").forEach(select => { select.value = ""; });
   document.querySelectorAll("#filters input[type=checkbox]").forEach(input => { input.checked = false; });
   elements.search.value = "";
-  elements.sort.value = "drive";
-  applyFilters();
+  elements.sort.value = "random";
+  if (window.matchMedia("(max-width: 760px)").matches && elements.filters.classList.contains("open")) previewMobileResultCount();
+  else applyFilters({ reshuffle: true });
 }
 
 async function init() {
   let camps = window.CAMP_DATA;
-  let evidence = window.CAMP_EVIDENCE || [];
   if (!Array.isArray(camps)) {
-    const [response, evidenceResponse] = await Promise.all([
-      fetch("data/camps.json"),
-      fetch("data/evidence.json").catch(() => null)
-    ]);
+    const response = await fetch("data/camps.json");
     if (!response.ok) throw new Error("營地資料載入失敗");
     camps = await response.json();
-    if (evidenceResponse?.ok) evidence = await evidenceResponse.json();
   }
   state.camps = camps;
-  evidence.forEach(row => {
-    if (!state.evidence.has(row.camp_id)) state.evidence.set(row.camp_id, []);
-    state.evidence.get(row.camp_id).push(row);
-  });
   const counties = [...new Set(state.camps.map(camp => camp.縣市))];
   sortWithTrailing(counties, ["不確定"]).forEach(county => elements.county.add(new Option(county, county)));
   const bookingPlatforms = [...new Set(state.camps.map(camp => camp.訂位平台))];
   sortWithTrailing(bookingPlatforms, ["其他", "不確定"]).forEach(platform => elements.booking.add(new Option(platform, platform)));
-  [elements.search, elements.county, elements.booking, elements.drive, elements.altitude, elements.surface, elements.rain, elements.kids, elements.lodging, elements.car, elements.carSide, elements.rvLodging, elements.sort]
+  elements.search.addEventListener("input", () => applyFilters({ reshuffle: false }));
+  [elements.county, elements.booking, elements.drive, elements.altitude, elements.surface, elements.rain, elements.kids, elements.lodging, elements.car, elements.carSide, elements.rvLodging]
     .filter(Boolean)
-    .forEach(element => element.addEventListener(element === elements.search ? "input" : "change", applyFilters));
+    .forEach(element => element.addEventListener("change", () => {
+      if (window.matchMedia("(max-width: 760px)").matches && elements.filters.classList.contains("open")) previewMobileResultCount();
+      else applyFilters({ reshuffle: true });
+    }));
+  elements.sort.addEventListener("change", () => applyFilters({ reshuffle: elements.sort.value === "random" }));
   document.querySelector("#reset-filters").addEventListener("click", resetFilters);
   elements.mobileFilterButton?.addEventListener("click", () => setMobileFiltersOpen(!elements.filters.classList.contains("open")));
   elements.closeMobileFilters?.addEventListener("click", () => setMobileFiltersOpen(false));
@@ -227,7 +230,11 @@ async function init() {
   document.addEventListener("keydown", event => { if (event.key === "Escape") setMobileFiltersOpen(false); });
   document.querySelector("#open-compare").addEventListener("click", () => { renderComparison(); elements.compareDialog.showModal(); });
   document.querySelector("#close-compare").addEventListener("click", () => elements.compareDialog.close());
-  applyFilters();
+  applyFilters({ reshuffle: true });
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    setMobileFiltersOpen(true);
+    previewMobileResultCount();
+  }
 }
 
 init().catch(error => {

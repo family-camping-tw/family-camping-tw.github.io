@@ -9,7 +9,7 @@
     <meta property="og:image" content="assets/camping-family-header.png">
     <meta name="twitter:card" content="summary_large_image">
     <title>親子露營搜尋</title>
-    <link rel="stylesheet" href="styles.css?v=20260716-data-status">
+    <link rel="stylesheet" href="styles.css?v=20260717-mobile-first">
   </head>
   <body>
     <header class="topbar">
@@ -71,7 +71,7 @@
         <section class="results" aria-live="polite">
           <div class="results-toolbar">
             <p id="result-count"></p>
-            <label class="sort-field">排序<select id="sort-select"><option value="drive">車程由短到長</option><option value="rating">Google 星等由高到低</option><option value="altitude">海拔由低到高</option></select></label>
+            <label class="sort-field">排序<select id="sort-select"><option value="random">隨機推薦</option><option value="drive">車程由短到長</option><option value="rating">Google 星等由高到低</option><option value="altitude">海拔由低到高</option></select></label>
           </div>
           <div class="active-filters" id="active-filters"></div>
           <div class="camp-list" id="camp-list"></div>
@@ -98,7 +98,6 @@
 
     <script src="config.js?v=20260716-google-ai"></script>
     <script src="data/camps.js?v=20260716-local-fallback"></script>
-    <script src="data/evidence.js?v=20260716-local-fallback"></script>
-    <script src="app.js?v=20260716-google-ai"></script>
+    <script src="app.js?v=20260717-mobile-first"></script>
   </body>
 </html>
