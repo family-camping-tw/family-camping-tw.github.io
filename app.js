@@ -151,6 +151,7 @@ function setMobileFiltersOpen(open) {
   document.body.classList.toggle("filter-open", open);
   elements.mobileFilterButton?.setAttribute("aria-expanded", String(open));
   elements.mobileFilterButton?.setAttribute("aria-label", open ? "關閉篩選" : "開啟篩選");
+  if (open) elements.filters.scrollTop = 0;
 }
 
 function showFilteredResults() {
