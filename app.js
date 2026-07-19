@@ -71,7 +71,7 @@ function cardTemplate(camp) {
   const bath = camp.衛浴設備評價 === "不確定" ? "衛浴評價不確定" : camp.衛浴設備評價;
   const compareButton = mobileViewport.matches ? "" : `<button class="compare-button" type="button" data-compare="${escapeHtml(camp.營地)}" aria-pressed="${selected}" aria-label="${selected ? "移出" : "加入"}比較" title="${selected ? "移出" : "加入"}比較">${selected ? "✓" : "+"}</button>`;
   return `<article class="camp-card">
-    <div class="card-head"><div><h2>${escapeHtml(camp.營地)}</h2><p class="location">${escapeHtml(camp.縣市)} ${escapeHtml(camp.鄉鎮)} · ${escapeHtml(camp.訂位平台)}／${escapeHtml(camp.訂位方式)}</p></div><span class="rating">${camp.Google星等 ? `★ ${camp.Google星等.toFixed(1)}` : "未評分"}</span></div>
+    <div class="card-head"><div><h2>${escapeHtml(camp.營地)}</h2><p class="location">${escapeHtml(camp.縣市)} ${escapeHtml(camp.鄉鎮)} · ${escapeHtml(camp.訂位平台)}／${escapeHtml(camp.訂位方式)}</p></div><span class="rating">${camp.Google星等 ? `★ ${camp.Google星等.toFixed(1)}${Number.isInteger(camp.評論數) ? ` <small class="review-count">(${camp.評論數}則評論)</small>` : ""}` : "未評分"}</span></div>
     <dl class="quick-facts"><div><dt>車程</dt><dd>${escapeHtml(camp.車程)}</dd></div><div><dt>海拔</dt><dd>${formatAltitude(camp.海拔高度)}</dd></div><div><dt>場地</dt><dd>${escapeHtml(camp.營地材質)}</dd></div></dl>
     <p class="summary">${escapeHtml(camp.特色摘要)}</p>
     <div class="tags">${renderTags(camp)}</div>
@@ -197,6 +197,7 @@ function renderComparison() {
   const camps = [...state.compare].map(name => state.camps.find(camp => camp.營地 === name)).filter(Boolean);
   const rows = [
     ["位置", c => `${c.縣市} ${c.鄉鎮}`], ["Google 星等", c => c.Google星等 ? c.Google星等.toFixed(1) : "不確定"],
+    ["Google 評論數", c => Number.isInteger(c.評論數) ? `${c.評論數} 則` : "不確定"],
     ["車程", c => c.車程], ["海拔", c => formatAltitude(c.海拔高度)], ["營地材質", c => c.營地材質], ["可在車內過夜", c => c.能否車露],
     ["車停帳邊", c => c.車停帳邊], ["露營車房型", c => c.露營車住宿],
     ["雨棚", c => c.雨棚區], ["親子設施", c => c.兒童設施], ["是否免搭帳", c => c.是否免搭帳],
