@@ -55,6 +55,8 @@ function renderTags(camp) {
   if (hasLodging(camp)) tags.push([camp.住宿類型, ""]);
   if (camp.能否車露 === "是") tags.push(["可車露", ""]);
   if (camp.車停帳邊 === "是") tags.push(["車停帳邊", ""]);
+  if (camp["Wi-Fi"] === "有") tags.push(["有 Wi-Fi", "sky"]);
+  if (camp["Wi-Fi"] === "無") tags.push(["無 Wi-Fi", ""]);
   return tags.slice(0, 4).map(([text, style]) => `<span class="tag ${style}">${escapeHtml(text)}</span>`).join("");
 }
 
@@ -199,7 +201,7 @@ function renderComparison() {
     ["位置", c => `${c.縣市} ${c.鄉鎮}`], ["Google 星等", c => c.Google星等 ? c.Google星等.toFixed(1) : "不確定"],
     ["Google 評論數", c => Number.isInteger(c.評論數) ? `${c.評論數} 則` : "不確定"],
     ["車程", c => c.車程], ["海拔", c => formatAltitude(c.海拔高度)], ["營地材質", c => c.營地材質], ["可在車內過夜", c => c.能否車露],
-    ["車停帳邊", c => c.車停帳邊], ["露營車房型", c => c.露營車住宿],
+    ["車停帳邊", c => c.車停帳邊], ["露營車房型", c => c.露營車住宿], ["Wi-Fi", c => c["Wi-Fi"]],
     ["雨棚", c => c.雨棚區], ["親子設施", c => c.兒童設施], ["是否免搭帳", c => c.是否免搭帳],
     ["住宿類型", c => c.住宿類型], ["訂位方式", c => `${c.訂位平台}／${c.訂位方式}`],
     ["衛浴評價", c => c.衛浴設備評價], ["資料狀態", c => c.資料狀態]
