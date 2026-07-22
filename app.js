@@ -39,6 +39,31 @@ const sortWithTrailing = (values, trailing) => {
   const regular = values.filter(value => !trailingSet.has(value)).sort((a, b) => a.localeCompare(b, "zh-Hant"));
   return [...regular, ...trailing.filter(value => values.includes(value))];
 };
+const countyDisplayOrder = [
+  // 北部
+  "臺北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣", "宜蘭縣",
+  // 中部
+  "苗栗縣", "臺中市", "彰化縣", "南投縣", "雲林縣",
+  // 南部
+  "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣",
+  // 東部
+  "花蓮縣", "臺東縣",
+  // 離島
+  "澎湖縣", "金門縣", "連江縣"
+];
+const sortCountiesByRegion = counties => {
+  const indexByCounty = new Map(countyDisplayOrder.map((county, index) => [county, index]));
+  return [...counties].sort((left, right) => {
+    if (left === "不確定") return 1;
+    if (right === "不確定") return -1;
+    const leftIndex = indexByCounty.get(left);
+    const rightIndex = indexByCounty.get(right);
+    if (leftIndex != null && rightIndex != null) return leftIndex - rightIndex;
+    if (leftIndex != null) return -1;
+    if (rightIndex != null) return 1;
+    return left.localeCompare(right, "zh-Hant");
+  });
+};
 
 function getGoogleAiUrl(camp) {
   const url = new URL("https://www.google.com/search");
@@ -227,7 +252,7 @@ async function init() {
   }
   state.camps = camps;
   const counties = [...new Set(state.camps.map(camp => camp.縣市))];
-  sortWithTrailing(counties, ["不確定"]).forEach(county => elements.county.add(new Option(county, county)));
+  sortCountiesByRegion(counties).forEach(county => elements.county.add(new Option(county, county)));
   const bookingPlatforms = [...new Set(state.camps.map(camp => camp.訂位平台))];
   sortWithTrailing(bookingPlatforms, ["其他", "不確定"]).forEach(platform => elements.booking.add(new Option(platform, platform)));
   elements.search.addEventListener("input", () => applyFilters({ reshuffle: false }));
