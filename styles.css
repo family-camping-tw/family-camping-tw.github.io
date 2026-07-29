@@ -58,6 +58,11 @@ legend { padding: 0 0 8px; font-size: 13px; font-weight: 800; }
 .sort-field select { width: auto; }
 .active-filters { display: flex; flex-wrap: wrap; gap: 7px; min-height: 8px; margin-bottom: 14px; }
 .filter-chip { padding: 5px 9px; border: 1px solid #b8cbc0; border-radius: 999px; color: var(--forest-dark); background: var(--mint); font-size: 12px; }
+.trip-notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 16px; border: 1px solid #7ea993; border-radius: 6px; color: #2f4d3d; background: #dfeee4; font-size: 15px; }
+.trip-notes p { display: flex; gap: 9px; min-width: 0; margin: 0; padding: 14px 16px; line-height: 1.6; }
+.trip-notes p + p { border-left: 1px solid #7ea993; }
+.trip-notes strong { flex: 0 0 auto; color: #174a35; font-weight: 900; }
+.trip-notes span { min-width: 0; }
 .camp-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .camp-card { display: grid; gap: 15px; min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: 0 2px 10px rgba(24, 53, 40, 0.04); }
 .camp-card:hover { border-color: #9bb8a8; box-shadow: var(--shadow); }
@@ -66,7 +71,7 @@ legend { padding: 0 0 8px; font-size: 13px; font-weight: 800; }
 .location { margin: 0; color: var(--muted); font-size: 13px; }
 .rating { flex: 0 0 auto; padding: 4px 8px; border-radius: 5px; color: #694b05; background: #fff1c9; font-weight: 800; }
 .review-count { font-size: 11px; font-weight: 600; white-space: nowrap; }
-.quick-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--line); }
+.quick-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--line); }
 .quick-facts div { min-width: 0; padding: 9px; background: #fafcfb; }
 .quick-facts dt { color: var(--muted); font-size: 11px; }
 .quick-facts dd { margin: 2px 0 0; font-size: 14px; font-weight: 800; overflow-wrap: anywhere; }
@@ -127,6 +132,8 @@ dialog::backdrop { background: rgba(18, 33, 26, 0.62); }
   .results-toolbar { align-items: flex-start; }
   .sort-field { display: grid; gap: 3px; }
   .sort-field select { max-width: 180px; }
+  .trip-notes { grid-template-columns: 1fr; }
+  .trip-notes p + p { border-top: 1px solid #7ea993; border-left: 0; }
   .card-actions { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
   .card-actions a { min-width: 0; padding-inline: 6px; font-size: 12px; }
   .compare-button, .compare-dock, #compare-dialog { display: none; }
@@ -139,8 +146,6 @@ dialog::backdrop { background: rgba(18, 33, 26, 0.62); }
   .search-band { padding-inline: 14px; }
   .app-shell { padding-inline: 12px; }
   .camp-card { padding: 16px; }
-  .quick-facts { grid-template-columns: 1fr 1fr; }
-  .quick-facts div:last-child { grid-column: 1 / -1; }
   .card-actions { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
   .google-ai-link { width: 100%; }
 }
