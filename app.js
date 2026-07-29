@@ -113,7 +113,7 @@ function cardTemplate(camp) {
 function getMatchingCamps() {
   const query = elements.search.value.trim().toLowerCase();
   return state.camps.filter(camp => {
-    const searchable = `${camp.營地} ${camp.縣市} ${camp.鄉鎮}`.toLowerCase();
+    const searchable = `${camp.營地} ${camp.特色摘要}`.toLowerCase();
     return (!query || searchable.includes(query))
       && (!elements.county.value || camp.縣市 === elements.county.value)
       && (!elements.booking.value || camp.訂位平台 === elements.booking.value)
