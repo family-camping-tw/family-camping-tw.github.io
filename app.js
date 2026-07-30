@@ -4,11 +4,11 @@ const mobileViewport = window.matchMedia("(max-width: 760px)");
 
 const elements = {
   list: document.querySelector("#camp-list"), count: document.querySelector("#result-count"), empty: document.querySelector("#empty-state"),
-  search: document.querySelector("#search-input"), county: document.querySelector("#filter-county"), drive: document.querySelector("#filter-drive"),
+  search: document.querySelector("#search-input"), county: document.querySelector("#filter-county"), town: document.querySelector("#filter-town"), townField: document.querySelector("#town-filter-field"), drive: document.querySelector("#filter-drive"),
   booking: document.querySelector("#filter-booking"), altitude: document.querySelector("#filter-altitude"), surface: document.querySelector("#filter-surface"),
   rain: document.querySelector("#filter-rain"),
   kids: document.querySelector("#filter-kids"), lodging: document.querySelector("#filter-lodging"), car: document.querySelector("#filter-car"),
-  carSide: document.querySelector("#filter-car-side"), rvLodging: document.querySelector("#filter-rv-lodging"),
+  carSide: document.querySelector("#filter-car-side"),
   sort: document.querySelector("#sort-select"), active: document.querySelector("#active-filters"), filters: document.querySelector("#filters"),
   compareDock: document.querySelector("#compare-dock"), compareSummary: document.querySelector("#compare-summary"), compareDialog: document.querySelector("#compare-dialog"),
   compareTable: document.querySelector("#compare-table"),
@@ -18,7 +18,7 @@ const elements = {
 
 const isKnown = value => value && value !== "不確定";
 const hasKids = camp => isKnown(camp.兒童設施) && camp.兒童設施 !== "無";
-const hasLodging = camp => camp.是否免搭帳 === "是";
+const hasLodging = camp => camp.是否免搭帳 === "是" || camp.露營車住宿 === "是";
 const dataStatusClass = value => ({
   資料較完整: "complete",
   部分資料待補: "partial",
@@ -64,6 +64,24 @@ const sortCountiesByRegion = counties => {
     return left.localeCompare(right, "zh-Hant");
   });
 };
+const sortTownsByStroke = towns => [...towns].sort(new Intl.Collator("zh-Hant-u-co-stroke", { sensitivity: "variant" }).compare);
+
+function syncTownFilter() {
+  const county = elements.county.value;
+  const towns = county
+    ? [...new Set(state.camps.filter(camp => camp.縣市 === county).map(camp => camp.鄉鎮).filter(Boolean))]
+    : [];
+
+  elements.town.replaceChildren(new Option("全部", ""));
+  elements.town.value = "";
+  if (towns.length < 2) {
+    elements.townField.hidden = true;
+    return;
+  }
+
+  sortTownsByStroke(towns).forEach(town => elements.town.add(new Option(town, town)));
+  elements.townField.hidden = false;
+}
 
 function getGoogleAiUrl(camp) {
   const url = new URL("https://www.google.com/search");
@@ -116,6 +134,7 @@ function getMatchingCamps() {
     const searchable = `${camp.營地} ${camp.特色摘要}`.toLowerCase();
     return (!query || searchable.includes(query))
       && (!elements.county.value || camp.縣市 === elements.county.value)
+      && (!elements.town.value || camp.鄉鎮 === elements.town.value)
       && (!elements.booking.value || camp.訂位平台 === elements.booking.value)
       && (!elements.drive.value || (Number.isFinite(camp.車程分鐘) && camp.車程分鐘 <= Number(elements.drive.value)))
       && matchesAltitudeBand(camp.海拔高度, elements.altitude.value)
@@ -124,8 +143,7 @@ function getMatchingCamps() {
       && (!elements.kids.checked || hasKids(camp))
       && (!elements.lodging.checked || hasLodging(camp))
       && (!elements.car.checked || camp.能否車露 === "是")
-      && (!elements.carSide.checked || camp.車停帳邊 === "是")
-      && (!elements.rvLodging.checked || camp.露營車住宿 === "是");
+      && (!elements.carSide.checked || camp.車停帳邊 === "是");
   });
 }
 
@@ -162,7 +180,7 @@ function sortCamps(reshuffle = false) {
 function renderActiveFilters() {
   const chips = [];
   if (elements.search.value) chips.push(`搜尋：${elements.search.value}`);
-  [[elements.county,"縣市"],[elements.booking,"訂位平台"],[elements.surface,"場地"]].forEach(([el,label]) => { if (el.value) chips.push(`${label}：${el.value}`); });
+  [[elements.county,"縣市"],[elements.town,"鄉鎮"],[elements.booking,"訂位平台"],[elements.surface,"場地"]].forEach(([el,label]) => { if (el.value) chips.push(`${label}：${el.value}`); });
   if (elements.drive.value) chips.push(`車程 ≤ ${elements.drive.options[elements.drive.selectedIndex].text}`);
   if (elements.altitude.value) chips.push(`海拔：${elements.altitude.options[elements.altitude.selectedIndex].text}`);
   if (elements.rain.checked) chips.push("有雨棚");
@@ -170,7 +188,6 @@ function renderActiveFilters() {
   if (elements.lodging.checked) chips.push("免搭帳");
   if (elements.car.checked) chips.push("可在車內過夜");
   if (elements.carSide.checked) chips.push("車停帳邊");
-  if (elements.rvLodging.checked) chips.push("有露營車房型");
   elements.active.innerHTML = chips.map(chip => `<span class="filter-chip">${escapeHtml(chip)}</span>`).join("");
 }
 
@@ -236,6 +253,7 @@ function renderComparison() {
 
 function resetFilters() {
   document.querySelectorAll("#filters select").forEach(select => { select.value = ""; });
+  syncTownFilter();
   document.querySelectorAll("#filters input[type=checkbox]").forEach(input => { input.checked = false; });
   elements.search.value = "";
   elements.sort.value = "random";
@@ -253,15 +271,21 @@ async function init() {
   state.camps = camps;
   const counties = [...new Set(state.camps.map(camp => camp.縣市))];
   sortCountiesByRegion(counties).forEach(county => elements.county.add(new Option(county, county)));
+  syncTownFilter();
   const bookingPlatforms = [...new Set(state.camps.map(camp => camp.訂位平台))];
   sortWithTrailing(bookingPlatforms, ["其他", "不確定"]).forEach(platform => elements.booking.add(new Option(platform, platform)));
   elements.search.addEventListener("input", () => applyFilters({ reshuffle: false }));
-  [elements.county, elements.booking, elements.drive, elements.altitude, elements.surface, elements.rain, elements.kids, elements.lodging, elements.car, elements.carSide, elements.rvLodging]
+  const handleFilterChange = () => {
+    if (mobileViewport.matches && elements.filters.classList.contains("open")) previewMobileResultCount();
+    else applyFilters({ reshuffle: true });
+  };
+  elements.county.addEventListener("change", () => {
+    syncTownFilter();
+    handleFilterChange();
+  });
+  [elements.town, elements.booking, elements.drive, elements.altitude, elements.surface, elements.rain, elements.kids, elements.lodging, elements.car, elements.carSide]
     .filter(Boolean)
-    .forEach(element => element.addEventListener("change", () => {
-      if (mobileViewport.matches && elements.filters.classList.contains("open")) previewMobileResultCount();
-      else applyFilters({ reshuffle: true });
-    }));
+    .forEach(element => element.addEventListener("change", handleFilterChange));
   elements.sort.addEventListener("change", () => applyFilters({ reshuffle: elements.sort.value === "random" }));
   document.querySelector("#reset-filters").addEventListener("click", resetFilters);
   elements.mobileFilterButton?.addEventListener("click", () => setMobileFiltersOpen(!elements.filters.classList.contains("open")));
