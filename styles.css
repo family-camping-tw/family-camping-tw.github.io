@@ -45,6 +45,7 @@ a { color: inherit; }
 .filter-heading h2, .dialog-header h2 { margin: 0; font-size: 18px; }
 .text-button { padding: 0; border: 0; color: var(--forest); background: transparent; font-weight: 700; }
 .field { display: grid; gap: 5px; margin-top: 15px; color: #425049; font-size: 13px; font-weight: 700; }
+.field[hidden] { display: none; }
 select { width: 100%; padding: 8px 34px 8px 10px; border: 1px solid #bdc8c1; border-radius: 5px; color: var(--ink); background: white; }
 fieldset { display: grid; gap: 9px; margin: 20px 0 0; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); }
 legend { padding: 0 0 8px; font-size: 13px; font-weight: 800; }
