@@ -18,7 +18,9 @@ const elements = {
 
 const isKnown = value => value && value !== "不確定";
 const hasKids = camp => isKnown(camp.兒童設施) && camp.兒童設施 !== "無";
-const hasLodging = camp => camp.是否免搭帳 === "是" || camp.露營車住宿 === "是";
+const fixedLodgingTypes = new Set(["固定帳篷", "小木屋", "民宿房間", "露營車住宿", "其他"]);
+const hasLodging = camp => camp.是否免搭帳 === "是"
+  || String(camp.住宿類型 || "").split("、").some(type => fixedLodgingTypes.has(type));
 const dataStatusClass = value => ({
   資料較完整: "complete",
   部分資料待補: "partial",
