@@ -276,6 +276,13 @@ function updateFeedbackMode() {
   const recommendation = feedbackMode() === "recommendation";
   elements.feedbackProblemFields.hidden = recommendation;
   elements.feedbackRecommendationFields.hidden = !recommendation;
+  if (recommendation) {
+    elements.feedbackCampName.removeAttribute("list");
+    elements.feedbackCampName.placeholder = "請輸入推薦的營地名稱";
+  } else {
+    elements.feedbackCampName.setAttribute("list", "camp-name-options");
+    elements.feedbackCampName.placeholder = "可輸入或從清單選擇營地";
+  }
   elements.feedbackIssue.required = !recommendation;
   elements.feedbackCorrection.required = !recommendation;
   elements.feedbackSubject.value = recommendation
