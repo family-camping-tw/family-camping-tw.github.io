@@ -13,8 +13,20 @@ const elements = {
   compareDock: document.querySelector("#compare-dock"), compareSummary: document.querySelector("#compare-summary"), compareDialog: document.querySelector("#compare-dialog"),
   compareTable: document.querySelector("#compare-table"),
   mobileFilterButton: document.querySelector("#mobile-filter-button"), filterBackdrop: document.querySelector("#filter-backdrop"),
-  closeMobileFilters: document.querySelector("#close-mobile-filters"), applyMobileFilters: document.querySelector("#apply-mobile-filters")
+  closeMobileFilters: document.querySelector("#close-mobile-filters"), applyMobileFilters: document.querySelector("#apply-mobile-filters"),
+  feedbackButton: document.querySelector("#feedback-button"), feedbackDialog: document.querySelector("#feedback-dialog"),
+  closeFeedback: document.querySelector("#close-feedback"), cancelFeedback: document.querySelector("#cancel-feedback"),
+  feedbackForm: document.querySelector("#feedback-form"), feedbackType: document.querySelectorAll("input[name=feedback_type]"),
+  feedbackCampName: document.querySelector("#feedback-camp-name"), campNameOptions: document.querySelector("#camp-name-options"),
+  feedbackProblemFields: document.querySelector("#feedback-problem-fields"), feedbackRecommendationFields: document.querySelector("#feedback-recommendation-fields"),
+  feedbackIssue: document.querySelector("#feedback-issue-category"), feedbackCorrection: document.querySelector("#feedback-correction"),
+  feedbackProblemSource: document.querySelector("#feedback-problem-source"), feedbackRecommendationNote: document.querySelector("#feedback-recommendation-note"),
+  feedbackRecommendationSource: document.querySelector("#feedback-recommendation-source"), feedbackStatus: document.querySelector("#feedback-status"),
+  feedbackSubmit: document.querySelector("#submit-feedback"), feedbackSubject: document.querySelector("#feedback-subject"),
+  feedbackToast: document.querySelector("#feedback-toast")
 };
+
+let feedbackToastTimer = 0;
 
 const isKnown = value => value && value !== "不確定";
 const hasKids = camp => isKnown(camp.兒童設施) && camp.兒童設施 !== "無";
@@ -239,6 +251,107 @@ function updateCompareDock() {
   elements.compareSummary.textContent = names.join("、");
 }
 
+function feedbackMode() {
+  return [...elements.feedbackType].find(input => input.checked)?.value === "推薦營地" ? "recommendation" : "problem";
+}
+
+function setFeedbackStatus(message = "", type = "") {
+  if (!elements.feedbackStatus) return;
+  elements.feedbackStatus.textContent = message;
+  elements.feedbackStatus.className = `feedback-status${type ? ` ${type}` : ""}`;
+}
+
+function showFeedbackToast(message) {
+  if (!elements.feedbackToast) return;
+  window.clearTimeout(feedbackToastTimer);
+  elements.feedbackToast.textContent = message;
+  elements.feedbackToast.hidden = false;
+  feedbackToastTimer = window.setTimeout(() => {
+    elements.feedbackToast.hidden = true;
+    elements.feedbackToast.textContent = "";
+  }, 5000);
+}
+
+function updateFeedbackMode() {
+  const recommendation = feedbackMode() === "recommendation";
+  elements.feedbackProblemFields.hidden = recommendation;
+  elements.feedbackRecommendationFields.hidden = !recommendation;
+  elements.feedbackIssue.required = !recommendation;
+  elements.feedbackCorrection.required = !recommendation;
+  elements.feedbackSubject.value = recommendation
+    ? "[露營地點搜尋] 營地推薦"
+    : "[露營地點搜尋] 資料回報";
+  setFeedbackStatus();
+}
+
+function isHttpUrl(value) {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function openFeedback(campName = "") {
+  if (!elements.feedbackDialog) return;
+  elements.feedbackForm.reset();
+  elements.feedbackForm.elements.page_url.value = window.location.href;
+  elements.feedbackCampName.value = campName;
+  updateFeedbackMode();
+  setFeedbackStatus();
+  elements.feedbackDialog.showModal();
+  elements.feedbackCampName.focus();
+}
+
+function populateFeedbackCampNames() {
+  if (!elements.campNameOptions) return;
+  const names = [...new Set(state.camps.map(camp => camp.營地).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
+  elements.campNameOptions.replaceChildren(...names.map(name => new Option(name)));
+}
+
+async function submitFeedback(event) {
+  event.preventDefault();
+  const form = elements.feedbackForm;
+  const sourceUrl = feedbackMode() === "recommendation"
+    ? elements.feedbackRecommendationSource.value.trim()
+    : elements.feedbackProblemSource.value.trim();
+  if (!form.reportValidity() || !isHttpUrl(sourceUrl)) {
+    setFeedbackStatus("請確認必填欄位及網址格式。", "error");
+    return;
+  }
+  if (!config.feedbackFormId) {
+    setFeedbackStatus("回報信箱尚未完成設定，請稍後再試。", "error");
+    return;
+  }
+  if (form.elements._gotcha.value) return;
+
+  elements.feedbackSubmit.disabled = true;
+  setFeedbackStatus("傳送中……");
+  try {
+    const response = await fetch(`https://formspree.io/f/${encodeURIComponent(config.feedbackFormId)}`, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: new FormData(form)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = Array.isArray(payload.errors) ? payload.errors.map(error => error.message).join(" ") : "請稍後再試。";
+      throw new Error(response.status === 429 ? "目前回報較多，請稍後再試。" : detail);
+    }
+    form.reset();
+    form.elements.page_url.value = window.location.href;
+    updateFeedbackMode();
+    elements.feedbackDialog.close();
+    showFeedbackToast("回報成功，謝謝你協助更新資料。");
+  } catch (error) {
+    setFeedbackStatus(error.message || "目前無法送出，請稍後再試。", "error");
+  } finally {
+    elements.feedbackSubmit.disabled = false;
+  }
+}
+
 function renderComparison() {
   const camps = [...state.compare].map(name => state.camps.find(camp => camp.營地 === name)).filter(Boolean);
   const rows = [
@@ -271,6 +384,7 @@ async function init() {
     camps = await response.json();
   }
   state.camps = camps;
+  populateFeedbackCampNames();
   const counties = [...new Set(state.camps.map(camp => camp.縣市))];
   sortCountiesByRegion(counties).forEach(county => elements.county.add(new Option(county, county)));
   syncTownFilter();
@@ -294,6 +408,11 @@ async function init() {
   elements.closeMobileFilters?.addEventListener("click", () => setMobileFiltersOpen(false));
   elements.filterBackdrop?.addEventListener("click", () => setMobileFiltersOpen(false));
   elements.applyMobileFilters?.addEventListener("click", showFilteredResults);
+  elements.feedbackButton?.addEventListener("click", () => openFeedback());
+  elements.closeFeedback?.addEventListener("click", () => elements.feedbackDialog.close());
+  elements.cancelFeedback?.addEventListener("click", () => elements.feedbackDialog.close());
+  elements.feedbackType.forEach(input => input.addEventListener("change", updateFeedbackMode));
+  elements.feedbackForm?.addEventListener("submit", submitFeedback);
   document.addEventListener("keydown", event => { if (event.key === "Escape") setMobileFiltersOpen(false); });
   document.querySelector("#open-compare").addEventListener("click", () => { renderComparison(); elements.compareDialog.showModal(); });
   document.querySelector("#close-compare").addEventListener("click", () => elements.compareDialog.close());

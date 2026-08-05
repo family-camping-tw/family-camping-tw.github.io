@@ -21,9 +21,12 @@
         <p class="brand">露營地點搜尋</p>
         <p class="brand-note">從高鐵新竹站出發</p>
       </div>
-      <button class="icon-button" id="mobile-filter-button" type="button" aria-label="開啟篩選" aria-controls="filters" aria-expanded="false" title="篩選">
-        <span aria-hidden="true">☰</span>
-      </button>
+      <div class="header-actions">
+        <button class="header-action" id="feedback-button" type="button">回報／推薦</button>
+        <button class="icon-button" id="mobile-filter-button" type="button" aria-label="開啟篩選" aria-controls="filters" aria-expanded="false" title="篩選">
+          <span aria-hidden="true">☰</span>
+        </button>
+      </div>
     </header>
 
     <main>
@@ -104,8 +107,77 @@
       <div class="compare-table-wrap" id="compare-table"></div>
     </dialog>
 
-    <script src="config.js?v=20260716-google-ai"></script>
-    <script src="data/camps.js?v=20260802-286"></script>
-    <script src="app.js?v=20260717-mobile-altitude"></script>
+    <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title">
+      <div class="dialog-header">
+        <div><p class="eyebrow">一起讓資料更實用</p><h2 id="feedback-title">回報問題／推薦營地</h2></div>
+        <button class="icon-button" id="close-feedback" type="button" aria-label="關閉回報表單" title="關閉">×</button>
+      </div>
+      <p class="feedback-intro">資料有誤，或有想加入的營地，都可以告訴我。回報者 Email 為選填，僅供需要時回覆。</p>
+      <form id="feedback-form" class="feedback-form" novalidate>
+        <fieldset class="feedback-type">
+          <legend>回報類型</legend>
+          <label><input type="radio" name="feedback_type" value="資料問題" checked> 回報資料問題</label>
+          <label><input type="radio" name="feedback_type" value="推薦營地"> 推薦營地</label>
+        </fieldset>
+
+        <label class="field">營地名稱<span class="required-mark" aria-hidden="true">*</span>
+          <input id="feedback-camp-name" name="camp_name" type="text" list="camp-name-options" maxlength="100" required autocomplete="off">
+        </label>
+        <datalist id="camp-name-options"></datalist>
+
+        <div id="feedback-problem-fields" class="feedback-section">
+          <label class="field">問題欄位<span class="required-mark" aria-hidden="true">*</span>
+            <select id="feedback-issue-category" name="issue_category" required>
+              <option value="">請選擇</option>
+              <option>地點／縣市鄉鎮</option>
+              <option>Google 星等／評論數</option>
+              <option>車程</option>
+              <option>海拔</option>
+              <option>訂位／價格</option>
+              <option>房型／設施</option>
+              <option>特色摘要</option>
+              <option>其他</option>
+            </select>
+          </label>
+          <label class="field">問題說明或正確資訊<span class="required-mark" aria-hidden="true">*</span>
+            <textarea id="feedback-correction" name="correction" rows="5" maxlength="2000" required placeholder="請描述你看到的問題，或提供可核對的正確資訊"></textarea>
+          </label>
+          <label class="field">參考網址
+            <input id="feedback-problem-source" name="problem_source_url" type="url" maxlength="500" placeholder="https://">
+          </label>
+        </div>
+
+        <div id="feedback-recommendation-fields" class="feedback-section" hidden>
+          <label class="field">縣市或所在地
+            <input id="feedback-location" name="location" type="text" maxlength="100">
+          </label>
+          <label class="field">推薦原因／附註
+            <textarea id="feedback-recommendation-note" name="recommendation_note" rows="5" maxlength="2000" placeholder="例如：有官方訂位頁、適合親子，或你希望整理的特色"></textarea>
+          </label>
+          <label class="field">官方網站、訂位頁或 Google Maps 網址
+            <input id="feedback-recommendation-source" name="recommendation_source_url" type="url" maxlength="500" placeholder="https://">
+          </label>
+        </div>
+
+        <label class="field">回報者 Email（選填）
+          <input id="feedback-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="如希望收到回覆，再填寫即可">
+        </label>
+        <input class="feedback-honeypot" name="_gotcha" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <input id="feedback-subject" name="_subject" type="hidden" value="[露營地點搜尋] 資料回報">
+        <input name="page_url" type="hidden">
+        <input name="site_name" type="hidden" value="露營地點搜尋">
+        <div id="feedback-status" class="feedback-status" role="status" aria-live="polite"></div>
+        <div class="feedback-actions">
+          <button class="secondary-button" id="cancel-feedback" type="button">取消</button>
+          <button class="primary-button" id="submit-feedback" type="submit">送出回報</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="feedback-toast" class="feedback-toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="config.js?v=20260805-feedback"></script>
+    <script src="data/camps.js?v=d9e2c88a1691"></script>
+    <script src="app.js?v=20260805-feedback-success"></script>
   </body>
 </html>
