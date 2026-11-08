@@ -98,9 +98,8 @@ function syncTownFilter() {
 }
 
 function getGoogleAiUrl(camp) {
-  const url = new URL("https://www.google.com/search");
+  const url = new URL("https://www.google.com/ai");
   url.searchParams.set("q", `${camp.營地} ${camp.縣市} ${camp.鄉鎮} 露營資訊`);
-  url.searchParams.set("udm", "50");
   url.searchParams.set("hl", "zh-TW");
   return url.toString();
 }
